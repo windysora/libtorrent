@@ -256,7 +256,10 @@ bool is_downloading_state(int const st)
 			m_torrent_file = (p.ti ? p.ti : std::make_shared<torrent_info>(m_info_hash));
 
 		if (m_torrent_file->is_valid())
+		{
 			initialize_merkle_trees();
+			m_size_on_disk = aux::size_on_disk(m_torrent_file->files());
+		}
 
 		// --- WEB SEEDS ---
 
@@ -3779,16 +3782,13 @@ namespace {
 
 		st.total_done = 0;
 		st.total_wanted_done = 0;
-		st.total_wanted = m_torrent_file->total_size();
+		st.total_wanted = m_size_on_disk;
 
-		TORRENT_ASSERT(st.total_wanted >= m_padding_blocks * default_block_size);
+		TORRENT_ASSERT(st.total_wanted <= m_torrent_file->total_size());
 		TORRENT_ASSERT(st.total_wanted >= 0);
 
 		TORRENT_ASSERT(!valid_metadata() || m_torrent_file->num_pieces() > 0);
 		if (!valid_metadata()) return;
-
-		TORRENT_ASSERT(st.total_wanted >= std::int64_t(m_torrent_file->piece_length())
-			* (m_torrent_file->num_pieces() - 1));
 
 		if (m_seed_mode || is_seed())
 		{
@@ -3797,16 +3797,18 @@ namespace {
 			// "wanted"
 			st.total_done = m_torrent_file->total_size()
 				- m_padding_blocks * default_block_size;
-			st.total_wanted_done = st.total_done;
-			st.total_wanted = st.total_done;
+			st.total_wanted_done = m_size_on_disk;
+			st.total_wanted = m_size_on_disk;
+			TORRENT_ASSERT(st.total_wanted <= st.total_done);
+			TORRENT_ASSERT(st.total_wanted_done <= st.total_wanted);
+			TORRENT_ASSERT(st.total_done <= m_torrent_file->total_size());
 			return;
 		}
 		else if (!has_picker())
 		{
 			st.total_done = 0;
 			st.total_wanted_done = 0;
-			st.total_wanted = m_torrent_file->total_size()
-				- m_padding_blocks * default_block_size;
+			st.total_wanted = m_size_on_disk;
 			return;
 		}
 
@@ -3814,8 +3816,9 @@ namespace {
 
 		file_storage const& files = m_torrent_file->files();
 
-		st.total_wanted = calc_bytes(files, m_picker->want());
-		st.total_wanted_done = calc_bytes(files, m_picker->have_want());
+		st.total_wanted = std::min(m_size_on_disk, calc_bytes(files, m_picker->want()));
+		st.total_wanted_done = std::min(m_file_progress.total_on_disk()
+			, calc_bytes(files, m_picker->have_want()));
 		st.total_done = calc_bytes(files, m_picker->have());
 		st.total = calc_bytes(files, m_picker->all_pieces());
 
@@ -7506,6 +7509,8 @@ namespace {
 		if (m_abort) return false;
 
 		m_info_hash = m_torrent_file->info_hashes();
+
+		m_size_on_disk = aux::size_on_disk(m_torrent_file->files());
 
 		m_ses.update_torrent_info_hash(shared_from_this(), old_ih);
 
