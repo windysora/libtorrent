@@ -3039,6 +3039,26 @@ bool is_downloading_state(int const st)
 			req.trackerid = ae.trackerid.empty() ? m_trackerid : ae.trackerid;
 			req.url = ae.url;
 
+			ae.disable_all_endpoints();
+			auto endpoint = ae.get_reserved_endpoints();
+			if (endpoint)
+			{
+				if ((*endpoint).last_error)
+				{
+					(*endpoint).reserved = false;
+					aux::random_shuffle(ae.endpoints);
+					ae.enable_one_endpoint();
+				}
+				else
+				{
+					(*endpoint).enabled = true;
+				}
+			}
+			else
+			{
+				ae.enable_one_ipv6_endpoint();
+			}
+
 			for (auto& aep : ae.endpoints)
 			{
 				// do not add code which continues to the next endpoint here!

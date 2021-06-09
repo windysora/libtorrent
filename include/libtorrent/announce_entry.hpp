@@ -123,6 +123,8 @@ namespace libtorrent {
 		// set to false to not announce from this endpoint
 		bool enabled : 1;
 
+		bool reserved : 1;
+
 		// reset announce counters and clears the started sent flag.
 		// The announce_endpoint will look like we've never talked to
 		// the tracker.
@@ -235,6 +237,12 @@ TORRENT_VERSION_NAMESPACE_2
 
 		// trims whitespace characters from the beginning of the URL.
 		void trim();
+
+		void announce_entry::disable_all_endpoints();
+		announce_endpoint* announce_entry::get_reserved_endpoints();
+
+		void announce_entry::enable_one_endpoint();
+		void announce_entry::enable_one_ipv6_endpoint();
 	};
 
 TORRENT_VERSION_NAMESPACE_2_END

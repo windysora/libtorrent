@@ -36,6 +36,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/aux_/time.hpp"
 #include "libtorrent/aux_/session_settings.hpp"
 #include "libtorrent/aux_/listen_socket_handle.hpp"
+#include "libtorrent/broadcast_socket.hpp"
 
 namespace libtorrent {
 
@@ -161,4 +162,71 @@ namespace libtorrent {
 			url.erase(url.begin());
 	}
 
+	void announce_entry::disable_all_endpoints()
+	{
+		std::for_each(endpoints.begin(), endpoints.end()
+			, [](announce_endpoint& aep) { aep.enabled = false;});
+	}
+
+	announce_endpoint* announce_entry::get_reserved_endpoints()
+	{
+		auto aep = std::find_if(endpoints.begin(), endpoints.end()
+			, [](announce_endpoint const& aep) { return aep.reserved; });
+
+		if (aep == endpoints.end())
+		{
+			return nullptr;
+		}
+		else
+		{
+			return &(*aep);
+		}
+	}
+
+	void announce_entry::enable_one_endpoint()
+	{
+		if (endpoints.empty())
+			return;
+
+		auto aep = std::find_if(endpoints.begin(), endpoints.end()
+			, [](announce_endpoint const& aep)
+			{
+				auto addr = aep.local_endpoint.address();
+				return addr.is_v4() && !addr.is_loopback() || addr.is_v6() && !is_local(addr);
+			});
+
+		if (aep == endpoints.end())
+		{
+			endpoints[0].enabled = true;
+			endpoints[0].reserved = true;
+		}
+		else
+		{
+			(*aep).enabled = true;
+			(*aep).reserved = true;
+		}
+	}
+
+	void announce_entry::enable_one_ipv6_endpoint()
+	{
+		if (endpoints.empty())
+			return;
+
+		auto aep = std::find_if(endpoints.begin(), endpoints.end()
+			, [](announce_endpoint const& aep)
+			{
+				auto addr = aep.local_endpoint.address();
+				return addr.is_v6() && !is_local(addr);
+			});
+
+		if (aep == endpoints.end())
+		{
+			enable_one_endpoint();
+		}
+		else
+		{
+			(*aep).enabled = true;
+			(*aep).reserved = true;
+		}
+	}
 }
