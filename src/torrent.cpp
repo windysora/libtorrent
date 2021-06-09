@@ -255,9 +255,6 @@ bool is_downloading_state(int const st)
 		if (!m_torrent_file)
 			m_torrent_file = (p.ti ? p.ti : std::make_shared<torrent_info>(m_info_hash));
 
-		if (m_torrent_file->is_valid())
-			initialize_merkle_trees();
-
 		// --- WEB SEEDS ---
 
 		// if override web seed flag is set, don't load any web seeds from the
@@ -7388,6 +7385,7 @@ namespace {
 
 	void torrent::initialize_merkle_trees()
 	{
+		if (!m_torrent_file->is_valid()) return;
 		if (!info_hash().has_v2()) return;
 
 		bool valid = m_torrent_file->v2_piece_hashes_verified();
