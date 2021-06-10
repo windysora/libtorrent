@@ -47,6 +47,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/session_types.hpp"
 #include "libtorrent/flags.hpp"
 #include "libtorrent/link.hpp" // for torrent_list_index_t
+#include "libtorrent/peer_id.hpp"
 
 #include <functional>
 #include <memory>
@@ -146,6 +147,8 @@ namespace aux {
 		static constexpr ip_source_t source_peer = 2_bit;
 		static constexpr ip_source_t source_tracker = 3_bit;
 		static constexpr ip_source_t source_router = 4_bit;
+
+		virtual peer_id get_global_peer_id() const = 0;
 
 		virtual void set_external_address(tcp::endpoint const& local_endpoint
 			, address const& ip

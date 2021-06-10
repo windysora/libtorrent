@@ -84,6 +84,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/aux_/lsd.hpp"
 #include "libtorrent/flags.hpp"
 #include "libtorrent/span.hpp"
+#include "libtorrent/peer_id.hpp"
 
 #if TORRENT_ABI_VERSION == 1
 #include "libtorrent/session_settings.hpp"
@@ -389,6 +390,8 @@ namespace aux {
 
 			torrent_peer_allocator_interface& get_peer_allocator() override
 			{ return m_peer_allocator; }
+
+			peer_id get_global_peer_id() const override { return m_global_peer_id; };
 
 			io_service& get_io_service() override { return m_io_service; }
 			resolver_interface& get_resolver() override { return m_host_resolver; }
@@ -1372,6 +1375,8 @@ namespace aux {
 			// set to true the first time post_session_stats() is
 			// called and we post the headers alert
 			bool m_posted_stats_header = false;
+
+			peer_id m_global_peer_id;
 		};
 
 #ifndef TORRENT_DISABLE_LOGGING

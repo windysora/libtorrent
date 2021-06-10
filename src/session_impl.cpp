@@ -524,6 +524,7 @@ namespace aux {
 		, m_lsd_announce_timer(m_io_service)
 		, m_close_file_timer(m_io_service)
 		, m_paused(flags & session::paused)
+		, m_global_peer_id(generate_peer_id(m_settings))
 	{
 	}
 
